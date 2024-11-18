@@ -40,6 +40,9 @@ sudo apt install -y libglm-dev
 sudo apt install -y libglfw3-dev
 sudo apt install -y libglew-dev
 sudo apt install -y libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config
+sudo apt install -y libxmu-dev
+sudo apt install -y libxi-dev
+sudo apt install -y libgl-dev
 
 git clone https://github.com/sueda/eol-cloth
 cd eol-cloth
