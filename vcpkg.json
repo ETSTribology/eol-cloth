@@ -1,0 +1,19 @@
+{
+  "name": "eol-cloth",
+  "version": "1.0.0",
+  "description": "End of Line Cloth Simulation Project",
+  "dependencies": [
+    "eigen3",
+    "glm",
+    "glfw3",
+    "glew",
+    {
+      "name": "libigl",
+      "features": [
+        "core",
+        "opengl"
+      ]
+    }
+  ],
+  "builtin-baseline": "d3a8e3f07e4ef73b8a8a72042c5e2b2a78f47e48"
+}
