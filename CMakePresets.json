@@ -2,17 +2,42 @@
   "version": 3,
   "configurePresets": [
     {
-      "name": "default",
-      "description": "Default configuration using vcpkg toolchain",
-      "binaryDir": "${sourceDir}/build",
+      "name": "release",
+      "description": "Release build without vcpkg",
+      "binaryDir": "${sourceDir}/build/release",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_BUILD_TYPE": "Release",
         "ONLINE": "ON",
         "MOSEK": "OFF",
         "GUROBI": "OFF",
         "IGL": "OFF"
       }
+    },
+    {
+      "name": "debug",
+      "description": "Debug build without vcpkg",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ONLINE": "ON",
+        "MOSEK": "OFF",
+        "GUROBI": "OFF",
+        "IGL": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "description": "Build the release version",
+      "jobs": "all"
+    },
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "description": "Build the debug version",
+      "jobs": "all"
     }
   ]
 }
