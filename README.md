@@ -33,6 +33,14 @@ While it does not need to be seperetely installed, we use a modified version of 
 
 #### Building
 ```sh
+sudo apt update
+sudo apt install -y build-essential cmake git
+sudo apt install -y libeigen3-dev
+sudo apt install -y libglm-dev
+sudo apt install -y libglfw3-dev
+sudo apt install -y libglew-dev
+
+
 git clone https://github.com/sueda/eol-cloth
 cd eol-cloth
 mkdir build
