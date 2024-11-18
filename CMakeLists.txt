@@ -1,281 +1,210 @@
 # Author: Shinjiro Sueda
 # Edited: Nick Weidner
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 
-# Name of the project
-PROJECT(eol-cloth)
+# Project Name
+project(eol-cloth)
+
+# Specify C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 #-----------------------------------------------
 # USER SETTINGS
 #-----------------------------------------------
 
-# COMPILER OPTIONS
+# Compiler Options
+option(ONLINE "Build with online rendering supported" ON)
+option(MOSEK "Build with Mosek support" OFF)
+option(GUROBI "Build with Gurobi support" OFF)
+option(IGL "Build with libIGL support" OFF)
 
-OPTION(ONLINE "Build with online rendering supported" ON)
-
-# Include support for one or multiple solvers
-OPTION(MOSEK "Build with Mosek support" OFF)
-OPTION(GUROBI "Build with Gurobi support" OFF)
-OPTION(IGL "Build with libIGL support" OFF) # Not used in the current version
-
-
-# LIBRARY PATHS
-# These paths are machine specific
-# These paths are examples
-
- SET(DEF_DIR_EIGEN "D:\\c++\\eigen-3.3.4")
- 
- IF(${ONLINE})
-	 SET(DEF_DIR_GLM "D:\\c++\\glm-0.9.8.4")
-	 SET(DEF_DIR_GLFW "D:\\c++\\glfw-3.2.1")
-	 SET(DEF_DIR_GLEW "D:\\c++\\glew-2.1.0")
-	 ADD_DEFINITIONS(-DEOLC_ONLINE)
- ENDIF()
- 
- IF(${MOSEK}) 
-	 SET(DEF_DIR_MOSEK "C:\\Program Files\\Mosek\\8\\tools\\platform\\win64x86") # Location of /h and /bin
-	 SET(DEF_BINARY_MOSEK "mosek64_8_1.lib") # Platform specific
-	 ADD_DEFINITIONS(-DkMosekLicensePath="C:/Users/weid691/mosek/mosek.lic") # Path to license file
-	 ADD_DEFINITIONS(-DEOLC_MOSEK)
- ENDIF()
- 
- IF(${GUROBI})
-	 SET(DEF_DIR_GUROBI "C:\\gurobi752\\win64")
-	 SET(DEF_BINARY_GUROBI "gurobi75.lib") # Platform specific
-	 SET(DEF_BINARY_GUROBI_RELEASE "gurobi_c++md2017.lib") # Platform specific
-	 SET(DEF_BINARY_GUROBI_DEBUG "gurobi_c++mdd2017.lib") # Platform specific
-	 ADD_DEFINITIONS(-DEOLC_GUROBI)
- ENDIF()
- 
- IF(${IGL})
-	 SET(DEF_DIR_IGL "C:\\c++\\libigl-1.2.1\\include") # Does not build static lib
-	 ADD_DEFINITIONS(-DEOLC_IGL)
- ENDIF()
- 
-# Additional defines
- ADD_DEFINITIONS(-D_USE_MATH_DEFINES)
- ADD_DEFINITIONS(-D_CRT_NO_VA_START_VALIDATION)
+# Enable CMake's package registry
+set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${CMAKE_CURRENT_SOURCE_DIR}/vcpkg")
 
 #-----------------------------------------------
-# END USER SETTINGS, DON'T TOUCH BELOW
+# FIND PACKAGES
 #-----------------------------------------------
 
-# Use glob to get the list of all source files.
-# We don't really need to include header and resource files to build, but it's
-# nice to have them also show up in IDEs.
- FILE(GLOB SOURCES "src/*.cpp" "src/*.c")
- FILE(GLOB HEADERS "src/*.hpp" "src/*.h")
- FILE(GLOB_RECURSE GLSL "resources/*.glsl")
- FILE(GLOB ARCSIMC "src/external/ArcSim/*.cpp" "src/external/ArcSim/*.c")
- FILE(GLOB ARCSIMH "src/external/ArcSim/*.hpp" "src/external/ArcSim/*.h")
- FILE(GLOB JSONC "src/external/Json/*.cpp" "src/external/Json/*.c")
- FILE(GLOB JSONH "src/external/Json/*.hpp" "src/external/Json/*.h")
- IF(${ONLINE})
-	FILE(GLOB ONLINEC "src/online/*.cpp" "src/online/*.c")
-	FILE(GLOB ONLINEH "src/online/*.hpp" "src/online/*.h")
- ENDIF()
- IF(${MOSEK})
-	FILE(GLOB MOSEKC "src/external/SolverWrappers/Mosek/*.cpp" "src/external/SolverWrappers/Mosek/*.c")
-	FILE(GLOB MOSEKH "src/external/SolverWrappers/Mosek/*.hpp" "src/external/SolverWrappers/Mosek/*.h")
- ENDIF()
- IF(${GUROBI})
-	FILE(GLOB GUROBIC "src/external/SolverWrappers/Gurobi/*.cpp" "src/external/SolverWrappers/Gurobi/*.c")
-	FILE(GLOB GUROBIH "src/external/SolverWrappers/Gurobi/*.hpp" "src/external/SolverWrappers/Gurobi/*.h")
- ENDIF()
- # FILE(GLOB_RECURSE SOURCES 
-	# RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-	# ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
-	# ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
- # FILE(GLOB_RECURSE EXTERNAL 
-	# RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-	# ${CMAKE_CURRENT_SOURCE_DIR}/external/ArcSim/*.cpp
-	# ${CMAKE_CURRENT_SOURCE_DIR}/external/ArcSim/*.hpp)
-	
-# SOURCE_GROUP(Source FILES ${SOURCES})
-# SOURCE_GROUP(External FILES ${EXTERNAL})
+# Eigen (header-only)
+find_package(Eigen3 CONFIG REQUIRED)
+if (NOT Eigen3_FOUND)
+    message(FATAL_ERROR "Eigen3 not found!")
+endif()
 
-# Set the executable.
-ADD_EXECUTABLE(${CMAKE_PROJECT_NAME} ${SOURCES} ${HEADERS} ${GLSL} ${ARCSIMC} ${ARCSIMH} ${JSONC} ${JSONH} ${ONLINEC} ${ONLINEH} ${MOSEKC} ${MOSEKH} ${GUROBIC} ${GUROBIH})
+# GLM (header-only)
+find_package(glm CONFIG REQUIRED)
+if (NOT glm_FOUND)
+    message(FATAL_ERROR "GLM not found!")
+endif()
 
-# Get the EIGEN environment variable. Since EIGEN is a header-only library, we
-# just need to add it to the include directory.
-SET(EIGEN3_INCLUDE_DIR "$ENV{EIGEN3_INCLUDE_DIR}")
-IF(NOT EIGEN3_INCLUDE_DIR)
-  # The environment variable was not set
-  SET(ERR_MSG "Please point the environment variable EIGEN3_INCLUDE_DIR to the root directory of your EIGEN installation.")
-  IF(WIN32)
-    # On Windows, try the default location
-    MESSAGE(STATUS "Looking for EIGEN in ${DEF_DIR_EIGEN}")
-    IF(IS_DIRECTORY ${DEF_DIR_EIGEN})
-      MESSAGE(STATUS "Found!")
-      SET(EIGEN3_INCLUDE_DIR ${DEF_DIR_EIGEN})
-    ELSE()
-      MESSAGE(FATAL_ERROR ${ERR_MSG})
-    ENDIF()
-  ELSE()
-    MESSAGE(FATAL_ERROR ${ERR_MSG})
-  ENDIF()
-ENDIF()
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+# GLFW
+find_package(glfw3 CONFIG REQUIRED)
+if (NOT glfw3_FOUND)
+    message(FATAL_ERROR "GLFW3 not found!")
+endif()
 
-IF(${ONLINE})
-	# Get the GLM environment variable. Since GLM is a header-only library, we
-	# just need to add it to the include directory.
-	SET(GLM_INCLUDE_DIR "$ENV{GLM_INCLUDE_DIR}")
-	IF(NOT GLM_INCLUDE_DIR)
-	  # The environment variable was not set
-	  SET(ERR_MSG "Please point the environment variable GLM_INCLUDE_DIR to the root directory of your GLM installation.")
-	  IF(WIN32)
-		# On Windows, try the default location
-		MESSAGE(STATUS "Looking for GLM in ${DEF_DIR_GLM}")
-		IF(IS_DIRECTORY ${DEF_DIR_GLM})
-		  MESSAGE(STATUS "Found!")
-		  SET(GLM_INCLUDE_DIR ${DEF_DIR_GLM})
-		ELSE()
-		  MESSAGE(FATAL_ERROR ${ERR_MSG})
-		ENDIF()
-	  ELSE()
-		MESSAGE(FATAL_ERROR ${ERR_MSG})
-	  ENDIF()
-	ENDIF()
-	INCLUDE_DIRECTORIES(${GLM_INCLUDE_DIR})
+# GLEW
+find_package(GLEW REQUIRED)
+if (NOT GLEW_FOUND)
+    message(FATAL_ERROR "GLEW not found!")
+endif()
 
-	# Get the GLFW environment variable. There should be a CMakeLists.txt in the 
-	# specified directory.
-	SET(GLFW_DIR "$ENV{GLFW_DIR}")
-	IF(NOT GLFW_DIR)
-	  # The environment variable was not set
-	  SET(ERR_MSG "Please point the environment variable GLFW_DIR to the root directory of your GLFW installation.")
-	  IF(WIN32)
-		# On Windows, try the default location
-		MESSAGE(STATUS "Looking for GLFW in ${DEF_DIR_GLFW}")
-		IF(IS_DIRECTORY ${DEF_DIR_GLFW})
-		  MESSAGE(STATUS "Found!")
-		  SET(GLFW_DIR ${DEF_DIR_GLFW})
-		ELSE()
-		  MESSAGE(FATAL_ERROR ${ERR_MSG})
-		ENDIF()
-	  ELSE()
-		MESSAGE(FATAL_ERROR ${ERR_MSG})
-	  ENDIF()
-	ENDIF()
-	OPTION(GLFW_BUILD_EXAMPLES "GLFW_BUILD_EXAMPLES" OFF)
-	OPTION(GLFW_BUILD_TESTS "GLFW_BUILD_TESTS" OFF)
-	OPTION(GLFW_BUILD_DOCS "GLFW_BUILD_DOCS" OFF)
-	IF(CMAKE_BUILD_TYPE MATCHES Release)
-	  ADD_SUBDIRECTORY(${GLFW_DIR} ${GLFW_DIR}/release)
-	ELSE()
-	  ADD_SUBDIRECTORY(${GLFW_DIR} ${GLFW_DIR}/debug)
-	ENDIF()
-	INCLUDE_DIRECTORIES(${GLFW_DIR}/include)
-	TARGET_LINK_LIBRARIES(${CMAKE_PROJECT_NAME} glfw ${GLFW_LIBRARIES})
+# libIGL (if enabled)
+if(IGL)
+    find_package(igl CONFIG REQUIRED)
+    if(NOT igl_FOUND)
+        message(FATAL_ERROR "libIGL not found!")
+    endif()
+endif()
 
-	# Get the GLEW environment variable.
-	SET(GLEW_DIR "$ENV{GLEW_DIR}")
-	IF(NOT GLEW_DIR)
-	  # The environment variable was not set
-	  SET(ERR_MSG "Please point the environment variable GLEW_DIR to the root directory of your GLEW installation.")
-	  IF(WIN32)
-		# On Windows, try the default location
-		MESSAGE(STATUS "Looking for GLEW in ${DEF_DIR_GLEW}")
-		IF(IS_DIRECTORY ${DEF_DIR_GLEW})
-		  MESSAGE(STATUS "Found!")
-		  SET(GLEW_DIR ${DEF_DIR_GLEW})
-		ELSE()
-		  MESSAGE(FATAL_ERROR ${ERR_MSG})
-		ENDIF()
-	  ELSE()
-		MESSAGE(FATAL_ERROR ${ERR_MSG})
-	  ENDIF()
-	ENDIF()
-	INCLUDE_DIRECTORIES(${GLEW_DIR}/include)
-	IF(WIN32)
-	  # With prebuilt binaries
-	  TARGET_LINK_LIBRARIES(${CMAKE_PROJECT_NAME} ${GLEW_DIR}/lib/Release/x64/glew32s.lib)
-	ELSE()
-	  TARGET_LINK_LIBRARIES(${CMAKE_PROJECT_NAME} ${GLEW_DIR}/lib/libGLEW.a)
-	ENDIF()
-ENDIF()
+# Mosek (manual handling)
+if(MOSEK)
+    # Assuming MOSEK is installed and environment variables are set
+    find_package(Mosek REQUIRED)
+    if(NOT Mosek_FOUND)
+        message(FATAL_ERROR "Mosek not found!")
+    endif()
+endif()
 
-# Get the MOSEK environment variable.
-IF(${MOSEK})
-	SET(MOSEK_DIR "$ENV{MOSEK_DIR}")
-	IF(NOT MOSEK_DIR)
-		# The environment variable was not set
-		SET(ERR_MSG "Please point the environment variable MOSEK_DIR to the root directory of your MOSEK installation.")
-		MESSAGE(STATUS "Looking for MOSEK in ${DEF_DIR_MOSEK}")
-		IF(IS_DIRECTORY ${DEF_DIR_MOSEK})
-			MESSAGE(STATUS "Found!")
-			SET(MOSEK_DIR ${DEF_DIR_MOSEK})
-		ELSE()
-			MESSAGE(FATAL_ERROR ${ERR_MSG})
-		ENDIF()
-	ENDIF()
-	INCLUDE_DIRECTORIES(${MOSEK_DIR}/h)
-	# With prebuilt binaries
-	TARGET_LINK_LIBRARIES(${CMAKE_PROJECT_NAME} ${MOSEK_DIR}/bin/${DEF_BINARY_MOSEK})
-ENDIF()
+# Gurobi (manual handling)
+if(GUROBI)
+    # Assuming GUROBI is installed and environment variables are set
+    find_package(Gurobi REQUIRED)
+    if(NOT Gurobi_FOUND)
+        message(FATAL_ERROR "Gurobi not found!")
+    endif()
+endif()
 
-# Get the MOSEK environment variable.
-IF(${GUROBI})
-	SET(GUROBI_DIR "$ENV{GUROBI_DIR}")
-	IF(NOT GUROBI_DIR)
-		# The environment variable was not set
-		SET(ERR_MSG "Please point the environment variable GUROBI_DIR to the root directory of your GUROBI installation.")
-		MESSAGE(STATUS "Looking for GUROBI in ${DEF_DIR_GUROBI}")
-		IF(IS_DIRECTORY ${DEF_DIR_GUROBI})
-			MESSAGE(STATUS "Found!")
-			SET(GUROBI_DIR ${DEF_DIR_GUROBI})
-		ELSE()
-			MESSAGE(FATAL_ERROR ${ERR_MSG})
-		ENDIF()
-	ENDIF()
-	INCLUDE_DIRECTORIES(${GUROBI_DIR}/include)
-	# With prebuilt binaries
-	TARGET_LINK_LIBRARIES(${CMAKE_PROJECT_NAME} ${GUROBI_DIR}/lib/${DEF_BINARY_GUROBI})
-	TARGET_LINK_LIBRARIES(${CMAKE_PROJECT_NAME} debug ${GUROBI_DIR}/lib/${DEF_BINARY_GUROBI_DEBUG})
-	TARGET_LINK_LIBRARIES(${CMAKE_PROJECT_NAME} optimized ${GUROBI_DIR}/lib/${DEF_BINARY_GUROBI_RELEASE})
-ENDIF()
+#-----------------------------------------------
+# FILE GLOB
+#-----------------------------------------------
 
-# Get the IGL environment variable.
-IF(${IGL})
-	SET(IGL_INCLUDE_DIR "$ENV{IGL_INCLUDE_DIR}")
-	IF(NOT IGL_INCLUDE_DIR)
-		# The environment variable was not set
-		SET(ERR_MSG "Please point the environment variable IGL_INCLUDE_DIR to the root directory of your IGL installation.")
-	  		MESSAGE(STATUS "Looking for IGL in ${DEF_DIR_IGL}")
-		IF(IS_DIRECTORY ${DEF_DIR_IGL})
-			MESSAGE(STATUS "Found!")
-			SET(GUROBI_DIR ${DEF_DIR_IGL})
-		ELSE()
-			MESSAGE(FATAL_ERROR ${ERR_MSG})
-		ENDIF()
-	ENDIF()
-	INCLUDE_DIRECTORIES(${IGL_INCLUDE_DIR})
-ENDIF()
+# Gather source files
+file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c")
+file(GLOB_RECURSE HEADERS "src/*.hpp" "src/*.h")
+file(GLOB_RECURSE GLSL "resources/*.glsl")
 
-# OS specific options and libraries
-IF(WIN32)
-  # c++11 is enabled by default.
-  # -Wall produces way too many warnings.
-  # -pedantic is not supported.
-  # Disable warning 4996.
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4996")
-  IF(${ONLINE})
-	TARGET_LINK_LIBRARIES(${CMAKE_PROJECT_NAME} opengl32.lib)
-  ELSE()
-	TARGET_LINK_LIBRARIES(${CMAKE_PROJECT_NAME})
-  ENDIF()
-ELSE()
-  # Enable all pedantic warnings.
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic")
-  IF(${ONLINE})
-	  IF(APPLE)
-		# Add required frameworks for GLFW.
-		TARGET_LINK_LIBRARIES(${CMAKE_PROJECT_NAME} "-framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo")
-	  ELSE()
-		#Link the Linux OpenGL library
-		TARGET_LINK_LIBRARIES(${CMAKE_PROJECT_NAME} "GL")
-	  ENDIF()
-	  ENDIF()
-ENDIF()
+# Optional sources
+if(ONLINE)
+    file(GLOB_RECURSE ONLINE_SRC "src/online/*.{cpp,c}")
+    file(GLOB_RECURSE ONLINE_HEADERS "src/online/*.{hpp,h}")
+    list(APPEND SOURCES ${ONLINE_SRC})
+    list(APPEND HEADERS ${ONLINE_HEADERS})
+endif()
+
+if(MOSEK)
+    file(GLOB_RECURSE MOSEK_SRC "src/external/SolverWrappers/Mosek/*.{cpp,c}")
+    file(GLOB_RECURSE MOSEK_HEADERS "src/external/SolverWrappers/Mosek/*.{hpp,h}")
+    list(APPEND SOURCES ${MOSEK_SRC})
+    list(APPEND HEADERS ${MOSEK_HEADERS})
+endif()
+
+if(GUROBI)
+    file(GLOB_RECURSE GUROBI_SRC "src/external/SolverWrappers/Gurobi/*.{cpp,c}")
+    file(GLOB_RECURSE GUROBI_HEADERS "src/external/SolverWrappers/Gurobi/*.{hpp,h}")
+    list(APPEND SOURCES ${GUROBI_SRC})
+    list(APPEND HEADERS ${GUROBI_HEADERS})
+endif()
+
+#-----------------------------------------------
+# ADD EXECUTABLE
+#-----------------------------------------------
+
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${GLSL})
+
+#-----------------------------------------------
+# INCLUDE DIRECTORIES
+#-----------------------------------------------
+
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    ${EIGEN3_INCLUDE_DIR}
+    ${GLM_INCLUDE_DIRS}
+    ${GLFW_INCLUDE_DIRS}
+    ${GLEW_INCLUDE_DIRS}
+)
+
+if(IGL)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${IGL_INCLUDE_DIRS})
+endif()
+
+if(MOSEK)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${MOSEK_INCLUDE_DIRS})
+endif()
+
+if(GUROBI)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${GUROBI_INCLUDE_DIRS})
+endif()
+
+#-----------------------------------------------
+# LINK LIBRARIES
+#-----------------------------------------------
+
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+    Eigen3::Eigen
+    glm::glm
+    glfw
+    GLEW::GLEW
+)
+
+if(IGL)
+    target_link_libraries(${PROJECT_NAME} PRIVATE igl::core igl::opengl)
+endif()
+
+if(ONLINE)
+    if(WIN32)
+        target_link_libraries(${PROJECT_NAME} PRIVATE opengl32)
+    elseif(APPLE)
+        target_link_libraries(${PROJECT_NAME} PRIVATE "-framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo")
+    else()
+        target_link_libraries(${PROJECT_NAME} PRIVATE GL)
+    endif()
+endif()
+
+if(MOSEK)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Mosek::Mosek)
+endif()
+
+if(GUROBI)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Gurobi::Gurobi)
+endif()
+
+#-----------------------------------------------
+# DEFINITIONS
+#-----------------------------------------------
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE 
+    _USE_MATH_DEFINES
+    _CRT_NO_VA_START_VALIDATION
+)
+
+if(ONLINE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE EOLC_ONLINE)
+endif()
+
+if(MOSEK)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE 
+        EOLC_MOSEK
+        kMosekLicensePath=\"C:/Users/weid691/mosek/mosek.lic\"
+    )
+endif()
+
+if(GUROBI)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE EOLC_GUROBI)
+endif()
+
+if(IGL)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE EOLC_IGL)
+endif()
+
+#-----------------------------------------------
+# OS SPECIFIC SETTINGS
+#-----------------------------------------------
+
+if(WIN32)
+    # Disable specific warnings
+    target_compile_options(${PROJECT_NAME} PRIVATE /wd4996)
+else()
+    # Enable pedantic warnings
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -pedantic)
+endif()
