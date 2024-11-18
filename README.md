@@ -39,7 +39,7 @@ sudo apt install -y libeigen3-dev
 sudo apt install -y libglm-dev
 sudo apt install -y libglfw3-dev
 sudo apt install -y libglew-dev
-
+sudo apt install libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev
 
 git clone https://github.com/sueda/eol-cloth
 cd eol-cloth
