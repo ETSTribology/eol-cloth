@@ -19,27 +19,24 @@ option(MOSEK "Build with Mosek support" OFF)
 option(GUROBI "Build with Gurobi support" OFF)
 option(IGL "Build with libIGL support" OFF)
 
-# Enable CMake's package registry
-set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${CMAKE_CURRENT_SOURCE_DIR}/vcpkg")
-
 #-----------------------------------------------
 # FIND PACKAGES
 #-----------------------------------------------
 
-# Eigen (header-only)
-find_package(Eigen3 CONFIG REQUIRED)
+# Eigen3 (header-only)
+find_package(Eigen3 REQUIRED)
 if (NOT Eigen3_FOUND)
     message(FATAL_ERROR "Eigen3 not found!")
 endif()
 
 # GLM (header-only)
-find_package(glm CONFIG REQUIRED)
+find_package(glm REQUIRED)
 if (NOT glm_FOUND)
     message(FATAL_ERROR "GLM not found!")
 endif()
 
 # GLFW
-find_package(glfw3 CONFIG REQUIRED)
+find_package(glfw3 REQUIRED)
 if (NOT glfw3_FOUND)
     message(FATAL_ERROR "GLFW3 not found!")
 endif()
@@ -52,7 +49,7 @@ endif()
 
 # libIGL (if enabled)
 if(IGL)
-    find_package(igl CONFIG REQUIRED)
+    find_package(igl REQUIRED)
     if(NOT igl_FOUND)
         message(FATAL_ERROR "libIGL not found!")
     endif()
@@ -60,7 +57,6 @@ endif()
 
 # Mosek (manual handling)
 if(MOSEK)
-    # Assuming MOSEK is installed and environment variables are set
     find_package(Mosek REQUIRED)
     if(NOT Mosek_FOUND)
         message(FATAL_ERROR "Mosek not found!")
@@ -69,12 +65,15 @@ endif()
 
 # Gurobi (manual handling)
 if(GUROBI)
-    # Assuming GUROBI is installed and environment variables are set
     find_package(Gurobi REQUIRED)
     if(NOT Gurobi_FOUND)
         message(FATAL_ERROR "Gurobi not found!")
     endif()
 endif()
+
+# Additional defines
+add_definitions(-D_USE_MATH_DEFINES)
+add_definitions(-D_CRT_NO_VA_START_VALIDATION)
 
 #-----------------------------------------------
 # FILE GLOB
@@ -84,6 +83,11 @@ endif()
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c")
 file(GLOB_RECURSE HEADERS "src/*.hpp" "src/*.h")
 file(GLOB_RECURSE GLSL "resources/*.glsl")
+
+file(GLOB ARCSIMC "src/external/ArcSim/*.cpp" "src/external/ArcSim/*.c")
+file(GLOB ARCSIMH "src/external/ArcSim/*.hpp" "src/external/ArcSim/*.h")
+file(GLOB JSONC "src/external/Json/*.cpp" "src/external/Json/*.c")
+file(GLOB JSONH "src/external/Json/*.hpp" "src/external/Json/*.h")
 
 # Optional sources
 if(ONLINE)
@@ -111,14 +115,14 @@ endif()
 # ADD EXECUTABLE
 #-----------------------------------------------
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${GLSL})
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${GLSL} ${ARCSIMC} ${ARCSIMH} ${JSONC} ${JSONH})
 
 #-----------------------------------------------
 # INCLUDE DIRECTORIES
 #-----------------------------------------------
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
-    ${EIGEN3_INCLUDE_DIR}
+    ${EIGEN3_INCLUDE_DIRS}
     ${GLM_INCLUDE_DIRS}
     ${GLFW_INCLUDE_DIRS}
     ${GLEW_INCLUDE_DIRS}
